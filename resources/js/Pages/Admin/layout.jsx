@@ -1,22 +1,17 @@
 "use client"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { AdminHeader } from "@/components/ui/admin/admin-header"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 
 export default function AdminLayout({ children }) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div
-        className="flex min-h-screen overflow-hidden bg-background"
-        style={{ "--sidebar-width": "12rem", "--sidebar-width-icon": "3rem" }}
-      >
+      <div className="flex min-h-screen w-full bg-background">
         <AdminSidebar />
-        <SidebarInset className="flex flex-col w-full">
+        <div className="flex flex-col flex-1 w-full">
           <AdminHeader />
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <div className="w-full">{children}</div>
-          </main>
-        </SidebarInset>
+          <main className="flex-1 w-full p-4">{children}</main>
+        </div>
       </div>
     </SidebarProvider>
   )

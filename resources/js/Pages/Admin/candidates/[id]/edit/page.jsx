@@ -1,159 +1,288 @@
 "use client"
 
-import React from "react"
+import { useState, useEffect } from "react"
 import { useForm, Head } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, Upload, ImageIcon, X } from "lucide-react"
+import AdminLayout from "../../../layout"
 
-export default function EditVoter({ voter, courses }) {
+export default function EditCandidate({ candidate, elections, positions }) {
   const { data, setData, put, processing, errors } = useForm({
-    name: voter.name || "",
-    admission_number: voter.admission_number || "",
-    email: voter.email || "",
-    password: "", // Leave blank to keep current password.
-    course_id: voter.course_id || "",
-    year_of_study: voter.year_of_study || "",
-    section: voter.section || "",
-    is_candidate: voter.is_candidate || false,
+    name: candidate.name || "",
+    bio: candidate.bio || "",
+    motto: candidate.motto || "",
+    election_id: candidate.election_id || "",
+    position_id: candidate.position_id || "",
+    photo: null,
+    _method: "PUT", // Add this for Laravel's form method spoofing
   })
+
+  // State to store filtered positions based on selected election
+  const [filteredPositions, setFilteredPositions] = useState([])
+
+  // State to store image preview
+  const [photoPreview, setPhotoPreview] = useState(candidate.photo || null)
+
+  // Update filtered positions whenever election_id changes
+  useEffect(() => {
+    if (data.election_id) {
+      const electionId = Number.parseInt(data.election_id)
+      const filtered = positions.filter((position) => position.election_id === electionId)
+      setFilteredPositions(filtered)
+
+      // Reset position_id if current selection is not valid for the new election
+      if (data.position_id) {
+        const isValidPosition = filtered.some((position) => position.id === Number.parseInt(data.position_id))
+        if (!isValidPosition) {
+          setData("position_id", "")
+        }
+      }
+    } else {
+      setFilteredPositions([])
+      setData("position_id", "")
+    }
+  }, [data.election_id, positions])
 
   function handleSubmit(e) {
     e.preventDefault()
-    put(`/admin/voters/${voter.id}`, { forceFormData: true })
+
+    // Prepare FormData to handle file upload
+    const formData = new FormData()
+
+    // Append all form fields
+    formData.append("name", data.name)
+    formData.append("bio", data.bio || "")
+    formData.append("motto", data.motto || "")
+    formData.append("election_id", data.election_id)
+    formData.append("position_id", data.position_id)
+
+    // Append photo if a new file is selected
+    if (data.photo) {
+      formData.append("photo", data.photo)
+    }
+
+    // Add method spoofing for Laravel
+    formData.append("_method", "PUT")
+
+    // Submit the form
+    put(`/admin/candidates/${candidate.id}`, {
+      data: formData,
+      forceFormData: true,
+    })
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    setData("photo", file)
+
+    // Create and set image preview
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setPhotoPreview(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setPhotoPreview(candidate.photo)
+    }
+  }
+
+  function removePhoto() {
+    setData("photo", null)
+    setPhotoPreview(null)
+    // Reset the file input
+    document.getElementById("photo").value = ""
   }
 
   return (
-    <>
-      <Head title="Edit Voter" />
+    <AdminLayout>
+      <Head title="Edit Candidate" />
       <div className="max-w-2xl mx-auto py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Edit Voter</CardTitle>
+            <CardTitle>Edit Candidate</CardTitle>
+            <CardDescription>Update candidate details for an election position</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name */}
+            <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
+              {/* Candidate Name */}
               <div>
-                <label htmlFor="name" className="block font-medium">Name</label>
+                <label htmlFor="name" className="block font-medium mb-1">
+                  Name
+                </label>
                 <Input
                   id="name"
                   type="text"
                   value={data.name}
                   onChange={(e) => setData("name", e.target.value)}
                   className="mt-1 block w-full"
+                  placeholder="Enter candidate name"
+                  required
                 />
                 {errors.name && <div className="text-destructive text-sm mt-1">{errors.name}</div>}
               </div>
 
-              {/* Admission Number */}
+              {/* Candidate Bio */}
               <div>
-                <label htmlFor="admission_number" className="block font-medium">Admission Number</label>
+                <label htmlFor="bio" className="block font-medium mb-1">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  value={data.bio}
+                  onChange={(e) => setData("bio", e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded p-2 min-h-[120px]"
+                  rows="4"
+                  placeholder="Enter candidate biography"
+                ></textarea>
+                {errors.bio && <div className="text-destructive text-sm mt-1">{errors.bio}</div>}
+              </div>
+
+              {/* Candidate Motto */}
+              <div>
+                <label htmlFor="motto" className="block font-medium mb-1">
+                  Motto
+                </label>
                 <Input
-                  id="admission_number"
+                  id="motto"
                   type="text"
-                  value={data.admission_number}
-                  onChange={(e) => setData("admission_number", e.target.value)}
+                  value={data.motto}
+                  onChange={(e) => setData("motto", e.target.value)}
                   className="mt-1 block w-full"
+                  placeholder="Enter candidate motto or slogan"
                 />
-                {errors.admission_number && <div className="text-destructive text-sm mt-1">{errors.admission_number}</div>}
+                {errors.motto && <div className="text-destructive text-sm mt-1">{errors.motto}</div>}
               </div>
 
-              {/* Email */}
+              {/* Improved Photo Upload */}
               <div>
-                <label htmlFor="email" className="block font-medium">Email</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={data.email}
-                  onChange={(e) => setData("email", e.target.value)}
-                  className="mt-1 block w-full"
-                />
-                {errors.email && <div className="text-destructive text-sm mt-1">{errors.email}</div>}
+                <label htmlFor="photo" className="block font-medium mb-2">
+                  Candidate Photo
+                </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                  {/* Upload Area */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-4 text-center hover:bg-gray-50 transition-colors ${
+                      errors.photo ? "border-red-300" : "border-gray-300"
+                    }`}
+                  >
+                    <input id="photo" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+
+                    <label htmlFor="photo" className="cursor-pointer block">
+                      <div className="flex flex-col items-center justify-center py-3">
+                        <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-gray-700">Click to upload</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Preview Area */}
+                  <div className="border rounded-lg p-2 bg-gray-50 aspect-square flex items-center justify-center overflow-hidden">
+                    {photoPreview ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={photoPreview || "/placeholder.svg"}
+                          alt="Candidate preview"
+                          className="w-full h-full object-cover rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={removePhoto}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          title="Remove photo"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-400">
+                        <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm">Photo preview</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {errors.photo && <div className="text-destructive text-sm mt-1">{errors.photo}</div>}
               </div>
 
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block font-medium">Password (Leave blank to keep current)</label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={data.password}
-                  onChange={(e) => setData("password", e.target.value)}
-                  className="mt-1 block w-full"
-                />
-                {errors.password && <div className="text-destructive text-sm mt-1">{errors.password}</div>}
+              {/* Election and Position Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Election Dropdown */}
+                <div>
+                  <label htmlFor="election_id" className="block font-medium mb-1">
+                    Election
+                  </label>
+                  <select
+                    id="election_id"
+                    value={data.election_id}
+                    onChange={(e) => setData("election_id", e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2 h-10"
+                    required
+                  >
+                    <option value="">Select an Election</option>
+                    {elections.map((election) => (
+                      <option key={election.id} value={election.id}>
+                        {election.title}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.election_id && <div className="text-destructive text-sm mt-1">{errors.election_id}</div>}
+                </div>
+
+                {/* Position Dropdown - Filtered by election */}
+                <div>
+                  <label htmlFor="position_id" className="block font-medium mb-1">
+                    Position
+                  </label>
+                  <select
+                    id="position_id"
+                    value={data.position_id}
+                    onChange={(e) => setData("position_id", e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2 h-10"
+                    disabled={!data.election_id}
+                    required
+                  >
+                    <option value="">Select a Position</option>
+                    {filteredPositions.map((position) => (
+                      <option key={position.id} value={position.id}>
+                        {position.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.position_id && <div className="text-destructive text-sm mt-1">{errors.position_id}</div>}
+                </div>
               </div>
 
-              {/* Course Dropdown */}
-              <div>
-                <label htmlFor="course_id" className="block font-medium">Course</label>
-                <select
-                  id="course_id"
-                  value={data.course_id}
-                  onChange={(e) => setData("course_id", e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded p-2"
-                >
-                  <option value="">Select a Course</option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>{course.name}</option>
-                  ))}
-                </select>
-                {errors.course_id && <div className="text-destructive text-sm mt-1">{errors.course_id}</div>}
-              </div>
-
-              {/* Year of Study */}
-              <div>
-                <label htmlFor="year_of_study" className="block font-medium">Year of Study</label>
-                <Input
-                  id="year_of_study"
-                  type="number"
-                  value={data.year_of_study}
-                  onChange={(e) => setData("year_of_study", e.target.value)}
-                  className="mt-1 block w-full"
-                />
-                {errors.year_of_study && <div className="text-destructive text-sm mt-1">{errors.year_of_study}</div>}
-              </div>
-
-              {/* Section Dropdown */}
-              <div>
-                <label htmlFor="section" className="block font-medium">Section</label>
-                <select
-                  id="section"
-                  value={data.section}
-                  onChange={(e) => setData("section", e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded p-2"
-                >
-                  <option value="">Select a Section</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                </select>
-                {errors.section && <div className="text-destructive text-sm mt-1">{errors.section}</div>}
-              </div>
-
-              {/* Mark as Candidate */}
-              <div className="flex items-center gap-2">
-                <input
-                  id="is_candidate"
-                  type="checkbox"
-                  checked={data.is_candidate}
-                  onChange={(e) => setData("is_candidate", e.target.checked)}
-                  className="mt-1"
-                />
-                <label htmlFor="is_candidate" className="font-medium">Mark as Candidate</label>
-                {errors.is_candidate && <div className="text-destructive text-sm mt-1">{errors.is_candidate}</div>}
-              </div>
+              {/* Show warning if no positions available */}
+              {data.election_id && filteredPositions.length === 0 && (
+                <Alert className="border-amber-500 bg-amber-50">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-600">
+                    No positions available for this election. Please create positions first.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Form Actions */}
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => window.history.back()} className="mr-2">
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={processing}>
-                  Update Voter
+                  {processing ? "Updating..." : "Update Candidate"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
       </div>
-    </>
+    </AdminLayout>
   )
 }
+

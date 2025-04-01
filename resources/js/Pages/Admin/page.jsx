@@ -13,14 +13,14 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-5">
+      <div className="w-full space-y-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground">Overview of your voting system.</p>
         </div>
 
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="w-full">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Elections</CardTitle>
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">3 active, 9 completed</p>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Positions</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">Across all elections</p>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Candidates</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">Across all elections</p>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Registered Voters</CardTitle>
               <Vote className="h-4 w-4 text-muted-foreground" />
@@ -63,24 +63,24 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-          <Card className="w-full lg:col-span-2">
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Recent Elections</CardTitle>
               <CardDescription>Overview of your most recent elections.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[250px] md:h-[300px] rounded-md border border-dashed flex items-center justify-center">
+              <div className="h-[250px] rounded-md border border-dashed flex items-center justify-center">
                 <p className="text-muted-foreground">Election activity chart</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader>
               <CardTitle>Voter Turnout</CardTitle>
               <CardDescription>Voter participation across elections.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[250px] md:h-[300px] rounded-md border border-dashed flex items-center justify-center">
+              <div className="h-[250px] rounded-md border border-dashed flex items-center justify-center">
                 <p className="text-muted-foreground">Voter turnout chart</p>
               </div>
             </CardContent>
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="w-full">
+          <Card>
             <CardHeader>
               <CardTitle>Active Elections</CardTitle>
               <CardDescription>Currently ongoing elections.</CardDescription>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader>
               <CardTitle>Upcoming Elections</CardTitle>
               <CardDescription>Elections scheduled to start soon.</CardDescription>
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="w-full">
+          <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Latest actions in the system.</CardDescription>

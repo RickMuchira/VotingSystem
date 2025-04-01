@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Course;
+use App\Models\Candidate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -100,12 +101,24 @@ class ElectionController extends Controller
     // Show details of a single election
     public function show($id)
     {
-        $election = Election::with(['course', 'positions', 'positions.candidates'])->findOrFail($id);
+        $election = Election::with(['course', 'positions'])->findOrFail($id);
+        
+        // Get positions
+        $positions = $election->positions;
+        
+        // Get candidates with position information
+        $candidates = Candidate::where('election_id', $id)
+                                ->with('position')
+                                ->get();
+        
+        // Format dates for display
+        $election->start_date = $election->start_date ? Carbon::parse($election->start_date)->format('M d, Y') : null;
+        $election->end_date = $election->end_date ? Carbon::parse($election->end_date)->format('M d, Y') : null;
     
         return Inertia::render('Admin/elections/[id]/page', [
             'election'   => $election,
-            'positions'  => $election->positions,
-            'candidates' => $election->positions->flatMap->candidates,
+            'positions'  => $positions,
+            'candidates' => $candidates,
         ]);
     }
 
@@ -127,19 +140,53 @@ class ElectionController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'title'      => 'required|string|max:255',
-            'course_id'  => 'nullable|exists:courses,id',  // Optional field
-            'section'    => 'required|string',             // Make section required
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'is_active'  => 'boolean',                     // Include active status in update
+            'title'         => 'required|string|max:255',
+            'course_id'     => 'nullable|exists:courses,id',
+            'section'       => 'required|string',
+            'start_date'    => 'required|date',
+            'end_date'      => 'required|date|after_or_equal:start_date',
+            'is_active'     => 'boolean',
+            'new_positions' => 'nullable|array',
+            'new_positions.*.name' => 'required|string|max:255',
         ]);
 
         $election = Election::findOrFail($id);
-        $election->update($validated);
-
-        return redirect()->route('admin.elections.index')
-                         ->with('success', 'Election updated successfully');
+        
+        // Start a transaction
+        DB::beginTransaction();
+        
+        try {
+            // Update the election
+            $election->update([
+                'title'      => $validated['title'],
+                'course_id'  => $validated['course_id'],
+                'section'    => $validated['section'],
+                'start_date' => $validated['start_date'],
+                'end_date'   => $validated['end_date'],
+                'is_active'  => $validated['is_active'] ?? false,
+            ]);
+            
+            // Create new positions if any
+            if (!empty($validated['new_positions'])) {
+                foreach ($validated['new_positions'] as $position) {
+                    Position::create([
+                        'name'        => $position['name'],
+                        'election_id' => $election->id,
+                    ]);
+                }
+            }
+            
+            DB::commit();
+            
+            return redirect()->route('admin.elections.index')
+                             ->with('success', 'Election updated successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Failed to update election: ' . $e->getMessage());
+        }
     }
 
     // Delete an election

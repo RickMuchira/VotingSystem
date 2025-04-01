@@ -1,19 +1,18 @@
-"use client";
-
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useForm } from "@inertiajs/react";
+"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { useForm } from "@inertiajs/react"
+import StudentLayout from "@/Layouts/StudentLayout"
 
 export default function Vote({ election, candidates }) {
   const { post, data, setData, processing, errors } = useForm({
     candidate_id: "",
-  });
+  })
 
   const handleVote = (e) => {
-    e.preventDefault();
-    post(`/student/elections/${election.id}/vote`);
-  };
+    e.preventDefault()
+    post(`/student/elections/${election.id}/vote`)
+  }
 
   return (
     <div className="space-y-6">
@@ -57,5 +56,8 @@ export default function Vote({ election, candidates }) {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
+
+Vote.layout = (page) => <StudentLayout children={page} />
+

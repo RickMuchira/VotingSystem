@@ -1,0 +1,758 @@
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Dashboard.jsx
+FILE CONTENTS:
+"use client";
+
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Link } from "@inertiajs/react";
+import { Badge } from "@/components/ui/badge";
+
+export default function Dashboard({ elections = [], student }) {
+  // Function to determine if an election is active now or upcoming
+  const getElectionStatus = (election) => {
+    const now = new Date();
+    const startDate = new Date(election.start_date);
+    const endDate = new Date(election.end_date);
+
+    if (now < startDate) {
+      return { status: "Upcoming", className: "bg-blue-100 text-blue-800 hover:bg-blue-100" };
+    } else if (now >= startDate && now <= endDate) {
+      return { status: "Active", className: "bg-green-100 text-green-800 hover:bg-green-100" };
+    } else {
+      return { status: "Passed", className: "bg-amber-100 text-amber-800 hover:bg-amber-100" };
+    }
+  };
+
+  // Format date to be more readable
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Active & Upcoming Elections</h2>
+        <p className="text-muted-foreground">Select an election to cast your vote.</p>
+      </div>
+      
+      {student && (
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="font-medium text-gray-700">Your Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+            <div>
+              <span className="text-gray-500 text-sm">Student ID:</span>
+              <p>{student.admission_number}</p>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">Course:</span>
+              <p>{student.course?.name || "N/A"}</p>
+            </div>
+            <div>
+              <span className="text-gray-500 text-sm">Section:</span>
+              <p>Section {student.section}, Year {student.year_of_study}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Elections</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Section</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>End Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {elections.length > 0 ? (
+                elections.map((election) => {
+                  const { status, className } = getElectionStatus(election);
+                  return (
+                    <TableRow key={election.id}>
+                      <TableCell className="font-medium">{election.title}</TableCell>
+                      <TableCell>{election.course ? election.course.name : "All Courses"}</TableCell>
+                      <TableCell>{election.section || "All Sections"}</TableCell>
+                      <TableCell>{formatDate(election.start_date)}</TableCell>
+                      <TableCell>{formatDate(election.end_date)}</TableCell>
+                      <TableCell>
+                        <Badge className={className} variant="outline">
+                          {status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {status === "Active" ? (
+                          <Button size="sm" asChild>
+                            <Link href={`/student/elections/${election.id}`}>
+                              Vote Now
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled={status === "Passed"}>
+                            {status === "Upcoming" ? "Coming Soon" : "Ended"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-muted-foreground">No active or upcoming elections found for you.</p>
+                      <p className="text-sm text-gray-500">Check back later for new elections.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}---END OF FILE---
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Login.jsx
+FILE CONTENTS:
+import { useState } from "react";
+import { router } from "@inertiajs/react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+
+export default function StudentLogin() {
+    const [formData, setFormData] = useState({
+        email: "",
+        password: "",
+    });
+
+    const [errors, setErrors] = useState({});
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        router.post("/student/login", formData, {
+            onSuccess: () => {
+                // Redirect the student to their dashboard after login.
+                router.visit("/student/dashboard");
+            },
+            onError: (error) => {
+                setErrors(error);
+            },
+        });
+    };
+
+    return (
+        <div className="flex justify-center items-center min-h-screen bg-gray-100">
+            <Card className="w-full max-w-md shadow-lg rounded-xl">
+                <CardHeader>
+                    <CardTitle className="text-center">Student Login</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <Label>Email</Label>
+                            <Input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Enter your email"
+                                required
+                            />
+                            {errors.email && <p className="text-red-500">{errors.email}</p>}
+                        </div>
+                        <div>
+                            <Label>Password</Label>
+                            <Input
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Enter your password"
+                                required
+                            />
+                            {errors.password && <p className="text-red-500">{errors.password}</p>}
+                        </div>
+                        <Button type="submit" className="w-full">
+                            Login
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+---END OF FILE---
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Vote.jsx
+FILE CONTENTS:
+"use client";
+
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useForm } from "@inertiajs/react";
+
+export default function Vote({ election, candidates }) {
+  const { post, data, setData, processing, errors } = useForm({
+    candidate_id: "",
+  });
+
+  const handleVote = (e) => {
+    e.preventDefault();
+    post(`/student/elections/${election.id}/vote`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">{election.title}</h2>
+        <p className="text-muted-foreground">Vote for your preferred candidate.</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Candidates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleVote}>
+            {candidates.length > 0 ? (
+              candidates.map((candidate) => (
+                <div key={candidate.id} className="flex items-center space-x-4 p-3 border rounded-lg mb-3">
+                  <input
+                    type="radio"
+                    id={`candidate-${candidate.id}`}
+                    name="candidate"
+                    value={candidate.id}
+                    onChange={(e) => setData("candidate_id", e.target.value)}
+                    className="cursor-pointer"
+                  />
+                  <label htmlFor={`candidate-${candidate.id}`} className="cursor-pointer text-lg">
+                    {candidate.name}
+                  </label>
+                </div>
+              ))
+            ) : (
+              <p className="text-center">No candidates available for this election.</p>
+            )}
+
+            {errors.candidate_id && <p className="text-red-500">{errors.candidate_id}</p>}
+
+            <Button type="submit" disabled={processing} className="mt-4 w-full">
+              {processing ? "Submitting..." : "Cast Vote"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+---END OF FILE---
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Election/AlreadyVoted.jsx
+FILE CONTENTS:
+"use client";
+
+import React from "react";
+import { router } from "@inertiajs/react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
+
+export default function AlreadyVoted({ election }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">{election.title}</h2>
+        <p className="text-muted-foreground">
+          You have already cast your vote for this election.
+        </p>
+      </div>
+      
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <CheckCircle className="h-16 w-16 text-blue-500" />
+            <h2 className="text-2xl font-bold text-blue-700">Vote Already Submitted</h2>
+            <p className="text-blue-600">
+              You have already participated in the {election.title} election.
+              Each student can only vote once per election.
+            </p>
+            <Button 
+              onClick={() => router.visit('/student/dashboard')}
+              className="mt-4"
+            >
+              Return to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}---END OF FILE---
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Election/Show.jsx
+FILE CONTENTS:
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { router } from "@inertiajs/react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { CalendarIcon, Clock, User, MapPin, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import PositionCard from "./Components/PositionCard";
+import { Progress } from "@/components/ui/progress";
+
+export default function ShowElection({ election, student, hasVoted }) {
+  const [selectedVotes, setSelectedVotes] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  
+  // Filter positions with no candidates
+  const positionsWithCandidates = election.positions.filter(position => 
+    position.candidates && position.candidates.length > 0
+  );
+  
+  // Log props on component mount
+  useEffect(() => {
+    console.log("Election data:", election);
+    console.log("Student data:", student);
+    console.log("Has voted:", hasVoted);
+    console.log("Filtered positions:", positionsWithCandidates);
+  }, []);
+  
+  const handleVote = (positionId, candidateId) => {
+    console.log(`Vote selected: Position ${positionId}, Candidate ${candidateId}`);
+    setSelectedVotes({
+      ...selectedVotes,
+      [positionId]: candidateId
+    });
+  };
+  
+  const redirectToLogin = () => {
+    // Store the current URL to redirect back after login
+    const currentPath = window.location.pathname;
+    router.visit('/student/login', {
+      data: {
+        redirect: currentPath
+      }
+    });
+  };
+  
+  const submitVotes = () => {
+    // Check if all positions have a selection
+    const positionIds = positionsWithCandidates.map(position => position.id);
+    const hasAllSelections = positionIds.every(id => selectedVotes[id]);
+    
+    if (!hasAllSelections) {
+      setError("Please vote for all positions before submitting.");
+      return;
+    }
+    
+    setSubmitting(true);
+    setError(null);
+    
+    // Format votes for submission - with null check for student
+    const votes = Object.keys(selectedVotes).map(positionId => {
+      const voteData = {
+        position_id: positionId,
+        candidate_id: selectedVotes[positionId],
+        election_id: election.id
+      };
+      
+      // Only add voter_id if student is available
+      if (student) {
+        voteData.voter_id = student.id;
+      }
+      
+      return voteData;
+    });
+    
+    // Debug information
+    console.log("Submitting votes:", votes);
+    console.log("Student ID:", student?.id);
+    console.log("Election ID:", election.id);
+    console.log("Endpoint:", `/student/elections/${election.id}/vote`);
+    
+    router.post(`/student/elections/${election.id}/vote`, { votes }, {
+      onSuccess: (page) => {
+        console.log("Vote submission successful:", page);
+        setSuccess(true);
+        setSubmitting(false);
+      },
+      onError: (errors) => {
+        console.error("Vote submission error:", errors);
+        
+        // Check if it's an authentication error
+        if (errors.message === "Authentication required to vote") {
+          setError("You need to be logged in to vote. Please login and try again.");
+          setTimeout(() => {
+            redirectToLogin();
+          }, 2000);
+        } else {
+          setError(errors.message || "An error occurred while submitting your vote.");
+        }
+        
+        setSubmitting(false);
+      }
+    });
+  };
+  
+  // Calculate progress percentage
+  const totalPositions = positionsWithCandidates.length;
+  const votedPositions = Object.keys(selectedVotes).length;
+  const progressPercentage = totalPositions > 0 
+    ? Math.round((votedPositions / totalPositions) * 100) 
+    : 0;
+  
+  // Helper to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+  
+  // If vote was successful, show success message
+  if (success) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <CheckCircle className="h-16 w-16 text-green-500" />
+              <h2 className="text-2xl font-bold text-green-700">Vote Submitted Successfully!</h2>
+              <p className="text-green-600">
+                Thank you for participating in the {election.title} election.
+                Your vote has been recorded.
+              </p>
+              <Button 
+                onClick={() => router.visit('/student/dashboard')}
+                className="mt-4"
+              >
+                Return to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // If user has already voted, show that message
+  if (hasVoted) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <CheckCircle className="h-16 w-16 text-blue-500" />
+              <h2 className="text-2xl font-bold text-blue-700">You've Already Voted</h2>
+              <p className="text-blue-600">
+                You have already cast your vote for the {election.title} election.
+                Thank you for participating.
+              </p>
+              <Button 
+                onClick={() => router.visit('/student/dashboard')}
+                className="mt-4"
+              >
+                Return to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // If not authenticated, show login prompt
+  if (!student) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">{election.title}</h2>
+          <p className="text-muted-foreground">
+            Authentication required to vote.
+          </p>
+        </div>
+        
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <AlertTriangle className="h-16 w-16 text-amber-500" />
+              <h2 className="text-2xl font-bold text-amber-700">Authentication Required</h2>
+              <p className="text-amber-600">
+                You need to be logged in to vote in this election.
+                Please login with your student credentials to continue.
+              </p>
+              <Button 
+                onClick={redirectToLogin}
+                className="mt-4"
+              >
+                Login to Vote
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">{election.title}</h2>
+        <p className="text-muted-foreground">
+          Cast your vote for the positions below.
+        </p>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Election Details</CardTitle>
+              <CardDescription>
+                Information about this election
+              </CardDescription>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center space-x-1 text-sm">
+              <CalendarIcon className="h-4 w-4 opacity-70" />
+              <span>Voting period: {formatDate(election.start_date)} - {formatDate(election.end_date)}</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2">
+              <User className="h-5 w-5 opacity-70" />
+              <span>For: {election.course ? election.course.name : "All Courses"}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5 opacity-70" />
+              <span>Section: {election.section || "All Sections"}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 opacity-70" />
+              <span>Status: Active</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Instructions */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+            <div>
+              <h3 className="font-medium">Voting Instructions</h3>
+              <p className="text-sm text-muted-foreground">
+                Select one candidate for each position. You must vote for all positions to submit. 
+                Your vote is final and cannot be changed after submission.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Voting Progress */}
+      <div className="bg-white rounded-lg p-4 shadow">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-medium">Voting Progress</span>
+          <span className="text-sm">{votedPositions} of {totalPositions} positions</span>
+        </div>
+        <Progress value={progressPercentage} className="h-2 bg-gray-200" />
+      </div>
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 flex items-start space-x-2">
+          <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div>{error}</div>
+        </div>
+      )}
+      
+      {/* Positions and Candidates */}
+      <div className="space-y-6">
+        {totalPositions === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Positions Available</h3>
+              <p className="text-muted-foreground">
+                There are no positions with candidates defined for this election yet. Please check back later.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          positionsWithCandidates.map((position) => (
+            <PositionCard
+              key={position.id}
+              position={position}
+              selectedCandidate={selectedVotes[position.id]}
+              onVote={(candidateId) => handleVote(position.id, candidateId)}
+            />
+          ))
+        )}
+      </div>
+      
+      {/* Submit Button */}
+      <div className="sticky bottom-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg border border-gray-200 backdrop-blur">
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="font-medium">Selected: {votedPositions}/{totalPositions} positions</span>
+            {votedPositions < totalPositions && (
+              <p className="text-sm text-muted-foreground">
+                Please vote for all positions before submitting.
+              </p>
+            )}
+          </div>
+          <Button 
+            onClick={submitVotes} 
+            disabled={votedPositions < totalPositions || submitting}
+            className="px-8"
+          >
+            {submitting ? "Submitting..." : "Submit Vote"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}---END OF FILE---
+FULL PATH: /home/rick110/Downloads/110/VotingSystem/resources/js/Pages/Student/Election/Components/PositionCard.jsx
+FILE CONTENTS:
+"use client";
+
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { User } from "lucide-react";
+
+export default function PositionCard({ position, selectedCandidate, onVote }) {
+  // Helper function to get the proper image URL
+  const getCandidateImageUrl = (photoPath) => {
+    if (!photoPath) {
+      return null;
+    }
+    
+    // If it's already a full URL, return it as is
+    if (photoPath.startsWith('http')) {
+      return photoPath;
+    }
+    
+    // If it's a path like "candidates/filename.jpg", make it use /storage prefix
+    if (photoPath.startsWith('candidates/')) {
+      return `/storage/${photoPath}`;
+    }
+    
+    // Fallback - just use the path as is with storage prefix
+    return `/storage/${photoPath}`;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{position.name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RadioGroup
+          value={selectedCandidate ? String(selectedCandidate) : ""}
+          onValueChange={(value) => onVote(value)}
+          className="space-y-4"
+        >
+          {position.candidates && position.candidates.length > 0 ? (
+            position.candidates.map((candidate) => (
+              <div
+                key={candidate.id}
+                className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
+                  selectedCandidate === candidate.id.toString()
+                    ? "bg-blue-50"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <RadioGroupItem
+                  value={candidate.id.toString()}
+                  id={`candidate-${candidate.id}`}
+                  className="mt-1"
+                />
+                <div className="flex-1 flex">
+                  <div className="mr-4">
+                    {candidate.photo ? (
+                      <img
+                        src={getCandidateImageUrl(candidate.photo)}
+                        alt={candidate.name}
+                        className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          console.error(`Failed to load image: ${e.target.src}`);
+                          e.target.src = "/placeholder-avatar.png"; // Fallback to default avatar
+                          e.target.onerror = null; // Prevent infinite loop
+                        }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="h-10 w-10 text-gray-500" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`candidate-${candidate.id}`}
+                      className="font-medium text-lg cursor-pointer"
+                    >
+                      {candidate.name}
+                    </Label>
+                    {candidate.motto && (
+                      <p className="text-sm text-muted-foreground italic">
+                        "{candidate.motto}"
+                      </p>
+                    )}
+                    {candidate.bio && (
+                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                        {candidate.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground">No candidates available for this position.</p>
+          )}
+        </RadioGroup>
+      </CardContent>
+    </Card>
+  );
+}---END OF FILE---

@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
 import { useForm, Head } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import AdminLayout from "../../layout"
 
 export default function ImportVotersPage() {
   const { data, setData, post, processing, errors } = useForm({
@@ -27,7 +28,7 @@ export default function ImportVotersPage() {
   }
 
   return (
-    <>
+    <AdminLayout>
       <Head title="Import Voters" />
       <div className="max-w-xl mx-auto py-8">
         <Card>
@@ -40,16 +41,8 @@ export default function ImportVotersPage() {
                 <label htmlFor="csv" className="block font-medium">
                   CSV File
                 </label>
-                <Input
-                  id="csv"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                  className="mt-1 block w-full"
-                />
-                {errors.csv && (
-                  <div className="text-destructive text-sm mt-1">{errors.csv}</div>
-                )}
+                <Input id="csv" type="file" accept=".csv" onChange={handleFileChange} className="mt-1 block w-full" />
+                {errors.csv && <div className="text-destructive text-sm mt-1">{errors.csv}</div>}
               </div>
               {preview && (
                 <div className="mt-4">
@@ -67,6 +60,7 @@ export default function ImportVotersPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </AdminLayout>
   )
 }
+

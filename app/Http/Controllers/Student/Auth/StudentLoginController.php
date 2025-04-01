@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Student\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Voter; // Assuming student records are stored as Voter
+use App\Models\Voter;
+use Inertia\Inertia;
 
 class StudentLoginController extends Controller
 {
@@ -23,8 +24,14 @@ class StudentLoginController extends Controller
                         ->first();
 
         if ($student) {
-            // Here you can store session data or login the student as required.
-            // For now, we simply redirect to the student dashboard.
+            // Store the student's ID and email in the session
+            session(['student_id' => $student->id]);
+            session(['student_email' => $student->email]);
+            
+            // Regenerate the session ID for security
+            $request->session()->regenerate();
+            
+            // Redirect to the student dashboard
             return redirect()->route('student.dashboard');
         }
 
@@ -32,5 +39,17 @@ class StudentLoginController extends Controller
         return back()->withErrors([
             'email' => 'Invalid credentials provided.',
         ])->withInput();
+    }
+
+    public function logout(Request $request)
+    {
+        // Remove student data from session
+        session()->forget(['student_id', 'student_email']);
+        
+        // Invalidate and regenerate the session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('student.login');
     }
 }

@@ -9,7 +9,6 @@ use App\Models\Vote;
 use App\Models\Position;
 use App\Models\Candidate;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -18,27 +17,22 @@ class StudentDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Get the authenticated user
-        $user = auth()->user();
+        // Get the student ID from session
+        $studentId = session('student_id');
         
-        // Find the corresponding voter record based on email 
-        // (assuming email is used for login and is unique)
-        $student = Voter::where('email', $user->email)->first();
+        if (!$studentId) {
+            return redirect()->route('student.login')
+                ->with('error', 'Please login to continue.');
+        }
         
-        // If no voter is found, try to find by other means or create a placeholder
+        // Find the voter record
+        $student = Voter::with('course')->find($studentId);
+        
         if (!$student) {
-            // For testing purposes, we'll create a basic structure to prevent errors
-            $student = (object)[
-                'admission_number' => $user->email ?? 'Unknown',
-                'email' => $user->email ?? 'Unknown',
-                'course_id' => null,
-                'section' => 'Unknown',
-                'year_of_study' => 'Unknown',
-                'course' => null
-            ];
-        } else {
-            // Load the course relationship if the student exists
-            $student->load('course');
+            // Clear the invalid session and redirect
+            session()->forget(['student_id', 'student_email']);
+            return redirect()->route('student.login')
+                ->with('error', 'Student record not found. Please contact administrator.');
         }
 
         // Get active and upcoming elections
@@ -50,20 +44,18 @@ class StudentDashboardController extends Controller
                 $query->where('end_date', '>=', $now);
             });
         
-        // Only filter by course and section if we have a valid student record
-        if ($student instanceof Voter) {
-            $elections = $elections->where(function ($query) use ($student) {
-                // For elections that are open to all or those that match the student's course
-                $query->whereNull('course_id')
-                      ->orWhere('course_id', $student->course_id);
-            })
-            ->where(function ($query) use ($student) {
-                // Elections that match the student's section or are for all sections
-                $query->where('section', 'All Sections')
-                      ->orWhere('section', 'Section ' . $student->section)
-                      ->orWhere('section', $student->section);
-            });
-        }
+        // Filter by course and section
+        $elections = $elections->where(function ($query) use ($student) {
+            // For elections that are open to all or those that match the student's course
+            $query->whereNull('course_id')
+                  ->orWhere('course_id', $student->course_id);
+        })
+        ->where(function ($query) use ($student) {
+            // Elections that match the student's section or are for all sections
+            $query->where('section', 'All Sections')
+                  ->orWhere('section', 'Section ' . $student->section)
+                  ->orWhere('section', $student->section);
+        });
         
         // Get the final collection and format dates
         $elections = $elections->get()
@@ -86,11 +78,16 @@ class StudentDashboardController extends Controller
     
     public function showElection($id)
     {
-        // Get the authenticated user
-        $user = auth()->user();
+        // Get the student ID from session
+        $studentId = session('student_id');
+        
+        if (!$studentId) {
+            return redirect()->route('student.login')
+                ->with('error', 'Please login to continue.');
+        }
         
         // Find the voter record
-        $student = Voter::with('course')->where('email', $user->email)->first();
+        $student = Voter::with('course')->find($studentId);
         
         if (!$student) {
             return redirect()->route('student.login')
@@ -173,13 +170,22 @@ class StudentDashboardController extends Controller
      */
     public function submitVote(Request $request, $id)
     {
-        // Get the authenticated user
-        $user = auth()->user();
-        $student = Voter::where('email', $user->email)->first();
+        // Get the student ID from session
+        $studentId = session('student_id');
+        
+        if (!$studentId) {
+            return response()->json([
+                'message' => 'Please login to continue.'
+            ], 401);
+        }
+        
+        // Find the voter record
+        $student = Voter::find($studentId);
         
         if (!$student) {
-            return redirect()->route('student.login')
-                ->with('error', 'Student record not found.');
+            return response()->json([
+                'message' => 'Student record not found.'
+            ], 403);
         }
         
         $election = Election::findOrFail($id);

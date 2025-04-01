@@ -1,69 +1,102 @@
+"use client";
+
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { UserCircle } from "lucide-react";
+import { User } from "lucide-react";
 
 export default function PositionCard({ position, selectedCandidate, onVote }) {
-  // Get candidates for this specific position
-  const positionCandidates = position.candidates || [];
-  
+  // Helper function to get the proper image URL
+  const getCandidateImageUrl = (photoPath) => {
+    if (!photoPath) {
+      return null;
+    }
+    
+    // If it's already a full URL, return it as is
+    if (photoPath.startsWith('http')) {
+      return photoPath;
+    }
+    
+    // If it's a path like "candidates/filename.jpg", make it use /storage prefix
+    if (photoPath.startsWith('candidates/')) {
+      return `/storage/${photoPath}`;
+    }
+    
+    // Fallback - just use the path as is with storage prefix
+    return `/storage/${photoPath}`;
+  };
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-3">
+    <Card>
+      <CardHeader>
         <CardTitle>{position.name}</CardTitle>
-        <CardDescription>
-          {position.description || "Select one candidate for this position"}
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        {positionCandidates.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            No candidates available for this position.
-          </div>
-        ) : (
-          <RadioGroup 
-            value={selectedCandidate} 
-            onValueChange={onVote}
-            className="space-y-2"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {positionCandidates.map((candidate) => (
-                <div key={candidate.id} className="relative">
-                  <RadioGroupItem
-                    value={candidate.id}
-                    id={`candidate-${candidate.id}`}
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor={`candidate-${candidate.id}`}
-                    className="flex flex-col items-center justify-between p-4 border rounded-lg cursor-pointer 
-                              peer-checked:border-primary peer-checked:bg-primary/5 
-                              hover:bg-gray-50 transition-all"
-                  >
-                    <div className="mb-3">
-                      {candidate.photo ? (
-                        <img 
-                          src={candidate.photo} 
-                          alt={candidate.name}
-                          className="w-32 h-32 rounded-full object-cover object-center border-2 border-gray-200"
-                        />
-                      ) : (
-                        <UserCircle className="w-32 h-32 text-gray-300" />
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <h3 className="font-medium text-lg">{candidate.name}</h3>
-                      {candidate.motto && (
-                        <p className="text-sm text-muted-foreground italic mt-1">"{candidate.motto}"</p>
-                      )}
-                    </div>
-                  </Label>
+        <RadioGroup
+          value={selectedCandidate ? String(selectedCandidate) : ""}
+          onValueChange={(value) => onVote(value)}
+          className="space-y-4"
+        >
+          {position.candidates && position.candidates.length > 0 ? (
+            position.candidates.map((candidate) => (
+              <div
+                key={candidate.id}
+                className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
+                  selectedCandidate === candidate.id.toString()
+                    ? "bg-blue-50"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <RadioGroupItem
+                  value={candidate.id.toString()}
+                  id={`candidate-${candidate.id}`}
+                  className="mt-1"
+                />
+                <div className="flex-1 flex">
+                  <div className="mr-4">
+                    {candidate.photo ? (
+                      <img
+                        src={getCandidateImageUrl(candidate.photo)}
+                        alt={candidate.name}
+                        className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          console.error(`Failed to load image: ${e.target.src}`);
+                          e.target.src = "/placeholder-avatar.png"; // Fallback to default avatar
+                          e.target.onerror = null; // Prevent infinite loop
+                        }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="h-10 w-10 text-gray-500" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`candidate-${candidate.id}`}
+                      className="font-medium text-lg cursor-pointer"
+                    >
+                      {candidate.name}
+                    </Label>
+                    {candidate.motto && (
+                      <p className="text-sm text-muted-foreground italic">
+                        "{candidate.motto}"
+                      </p>
+                    )}
+                    {candidate.bio && (
+                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                        {candidate.bio}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </RadioGroup>
-        )}
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground">No candidates available for this position.</p>
+          )}
+        </RadioGroup>
       </CardContent>
     </Card>
   );

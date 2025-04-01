@@ -67,9 +67,21 @@ Route::get('/student/login', function () {
 // Student Login Endpoint
 Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login.post');
 
+// Student Logout Endpoint (Added this)
+Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
+
 // Student Dashboard
 Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
 
-// ✅ Student Voting Routes (WITHOUT middleware restrictions)
+// Student Election View and Voting Routes
+Route::get('/student/election/{id}', [StudentDashboardController::class, 'showElection'])->name('student.election.show');
+Route::post('/student/election/{id}/vote', [StudentDashboardController::class, 'submitVote'])->name('student.election.vote');
+
+// Student Voting Routes (original routes from your file)
 Route::get('/student/elections/{electionId}', [VotingController::class, 'show'])->name('student.vote.show');
 Route::post('/student/elections/{electionId}/vote', [VotingController::class, 'vote'])->name('student.vote.cast');
+
+// Fallback route for debugging
+Route::fallback(function () {
+    return response()->json(['message' => 'Route not found. Check URL and method.'], 404);
+});

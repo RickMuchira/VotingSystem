@@ -9,6 +9,7 @@ use App\Models\Position;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CandidateController extends Controller
 {
@@ -53,7 +54,12 @@ class CandidateController extends Controller
             'motto'       => 'nullable|string',
             'election_id' => 'required|exists:elections,id',
             'position_id' => 'required|exists:positions,id',
-            'photo'       => 'nullable|image|max:2048',
+            'photo'       => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,webp',
+                'max:5120', // 5MB file size limit
+            ],
         ]);
         
         // Verify that the position belongs to the selected election
@@ -64,9 +70,13 @@ class CandidateController extends Controller
             ])->withInput();
         }
         
+        // Handle photo upload
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('candidates', 'public');
-            $validated['photo'] = 'storage/' . $path;
+            // Generate a unique filename
+            $file = $request->file('photo');
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('candidates', $filename, 'public');
+            $validated['photo'] = 'storage/candidates/' . $filename;
         }
         
         Candidate::create($validated);
@@ -107,7 +117,12 @@ class CandidateController extends Controller
             'motto'       => 'nullable|string',
             'election_id' => 'required|exists:elections,id',
             'position_id' => 'required|exists:positions,id',
-            'photo'       => 'nullable|image|max:2048',
+            'photo'       => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,webp',
+                'max:5120', // 5MB file size limit
+            ],
         ]);
         
         // Verify that the position belongs to the selected election
@@ -121,12 +136,15 @@ class CandidateController extends Controller
         // Handle file uploads separately
         if ($request->hasFile('photo')) {
             // Delete old photo if exists and it's not a placeholder
-            if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/', '', $candidate->photo))) {
-                Storage::disk('public')->delete(str_replace('storage/', '', $candidate->photo));
+            if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/candidates/', '', $candidate->photo))) {
+                Storage::disk('public')->delete(str_replace('storage/candidates/', '', $candidate->photo));
             }
             
-            $path = $request->file('photo')->store('candidates', 'public');
-            $validated['photo'] = 'storage/' . $path;
+            // Generate a unique filename
+            $file = $request->file('photo');
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('candidates', $filename, 'public');
+            $validated['photo'] = 'storage/candidates/' . $filename;
         } else {
             // Retain the existing photo if no new one is uploaded
             $validated['photo'] = $candidate->photo;
@@ -146,8 +164,8 @@ class CandidateController extends Controller
         $candidate = Candidate::findOrFail($id);
         
         // Delete the photo if exists
-        if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/', '', $candidate->photo))) {
-            Storage::disk('public')->delete(str_replace('storage/', '', $candidate->photo));
+        if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/candidates/', '', $candidate->photo))) {
+            Storage::disk('public')->delete(str_replace('storage/candidates/', '', $candidate->photo));
         }
         
         $candidate->delete();

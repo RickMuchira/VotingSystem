@@ -1,10 +1,9 @@
 "use client"
-
-import React from "react"
 import { useForm, Head } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import AdminLayout from "../../../layout"
 
 export default function EditVoter({ voter, courses }) {
   const { data, setData, put, processing, errors } = useForm({
@@ -24,7 +23,7 @@ export default function EditVoter({ voter, courses }) {
   }
 
   return (
-    <>
+    <AdminLayout>
       <Head title="Edit Voter" />
       <div className="max-w-2xl mx-auto py-8">
         <Card>
@@ -46,9 +45,7 @@ export default function EditVoter({ voter, courses }) {
                   className="mt-1 block w-full"
                 />
                 {errors.admission_number && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.admission_number}
-                  </div>
+                  <div className="text-destructive text-sm mt-1">{errors.admission_number}</div>
                 )}
               </div>
 
@@ -64,11 +61,7 @@ export default function EditVoter({ voter, courses }) {
                   onChange={(e) => setData("name", e.target.value)}
                   className="mt-1 block w-full"
                 />
-                {errors.name && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.name}
-                  </div>
-                )}
+                {errors.name && <div className="text-destructive text-sm mt-1">{errors.name}</div>}
               </div>
 
               {/* Email */}
@@ -83,11 +76,7 @@ export default function EditVoter({ voter, courses }) {
                   onChange={(e) => setData("email", e.target.value)}
                   className="mt-1 block w-full"
                 />
-                {errors.email && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.email}
-                  </div>
-                )}
+                {errors.email && <div className="text-destructive text-sm mt-1">{errors.email}</div>}
               </div>
 
               {/* Password */}
@@ -102,11 +91,7 @@ export default function EditVoter({ voter, courses }) {
                   onChange={(e) => setData("password", e.target.value)}
                   className="mt-1 block w-full"
                 />
-                {errors.password && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.password}
-                  </div>
-                )}
+                {errors.password && <div className="text-destructive text-sm mt-1">{errors.password}</div>}
               </div>
 
               {/* Course Dropdown */}
@@ -127,11 +112,7 @@ export default function EditVoter({ voter, courses }) {
                     </option>
                   ))}
                 </select>
-                {errors.course_id && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.course_id}
-                  </div>
-                )}
+                {errors.course_id && <div className="text-destructive text-sm mt-1">{errors.course_id}</div>}
               </div>
 
               {/* Year of Study */}
@@ -146,11 +127,7 @@ export default function EditVoter({ voter, courses }) {
                   onChange={(e) => setData("year_of_study", e.target.value)}
                   className="mt-1 block w-full"
                 />
-                {errors.year_of_study && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.year_of_study}
-                  </div>
-                )}
+                {errors.year_of_study && <div className="text-destructive text-sm mt-1">{errors.year_of_study}</div>}
               </div>
 
               {/* Section Dropdown */}
@@ -168,11 +145,7 @@ export default function EditVoter({ voter, courses }) {
                   <option value="A">A</option>
                   <option value="B">B</option>
                 </select>
-                {errors.section && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.section}
-                  </div>
-                )}
+                {errors.section && <div className="text-destructive text-sm mt-1">{errors.section}</div>}
               </div>
 
               {/* Mark as Candidate */}
@@ -187,11 +160,7 @@ export default function EditVoter({ voter, courses }) {
                 <label htmlFor="is_candidate" className="font-medium">
                   Mark as Candidate
                 </label>
-                {errors.is_candidate && (
-                  <div className="text-destructive text-sm mt-1">
-                    {errors.is_candidate}
-                  </div>
-                )}
+                {errors.is_candidate && <div className="text-destructive text-sm mt-1">{errors.is_candidate}</div>}
               </div>
 
               {/* Form Actions */}
@@ -204,6 +173,7 @@ export default function EditVoter({ voter, courses }) {
           </CardContent>
         </Card>
       </div>
-    </>
+    </AdminLayout>
   )
 }
+

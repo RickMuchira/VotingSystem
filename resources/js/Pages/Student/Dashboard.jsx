@@ -1,40 +1,39 @@
-"use client";
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Link } from "@inertiajs/react";
-import { Badge } from "@/components/ui/badge";
+"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Link } from "@inertiajs/react"
+import { Badge } from "@/components/ui/badge"
+import StudentLayout from "@/Layouts/StudentLayout"
 
 export default function Dashboard({ elections = [], student }) {
   // Function to determine if an election is active now or upcoming
   const getElectionStatus = (election) => {
-    const now = new Date();
-    const startDate = new Date(election.start_date);
-    const endDate = new Date(election.end_date);
+    const now = new Date()
+    const startDate = new Date(election.start_date)
+    const endDate = new Date(election.end_date)
 
     if (now < startDate) {
-      return { status: "Upcoming", className: "bg-blue-100 text-blue-800 hover:bg-blue-100" };
+      return { status: "Upcoming", className: "bg-blue-100 text-blue-800 hover:bg-blue-100" }
     } else if (now >= startDate && now <= endDate) {
-      return { status: "Active", className: "bg-green-100 text-green-800 hover:bg-green-100" };
+      return { status: "Active", className: "bg-green-100 text-green-800 hover:bg-green-100" }
     } else {
-      return { status: "Passed", className: "bg-amber-100 text-amber-800 hover:bg-amber-100" };
+      return { status: "Passed", className: "bg-amber-100 text-amber-800 hover:bg-amber-100" }
     }
-  };
+  }
 
   // Format date to be more readable
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
+    if (!dateString) return "N/A"
+    const date = new Date(dateString)
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
+      minute: "2-digit",
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -42,7 +41,7 @@ export default function Dashboard({ elections = [], student }) {
         <h2 className="text-3xl font-bold tracking-tight">Active & Upcoming Elections</h2>
         <p className="text-muted-foreground">Select an election to cast your vote.</p>
       </div>
-      
+
       {student && (
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-medium text-gray-700">Your Information</h3>
@@ -57,7 +56,9 @@ export default function Dashboard({ elections = [], student }) {
             </div>
             <div>
               <span className="text-gray-500 text-sm">Section:</span>
-              <p>Section {student.section}, Year {student.year_of_study}</p>
+              <p>
+                Section {student.section}, Year {student.year_of_study}
+              </p>
             </div>
           </div>
         </div>
@@ -83,7 +84,7 @@ export default function Dashboard({ elections = [], student }) {
             <TableBody>
               {elections.length > 0 ? (
                 elections.map((election) => {
-                  const { status, className } = getElectionStatus(election);
+                  const { status, className } = getElectionStatus(election)
                   return (
                     <TableRow key={election.id}>
                       <TableCell className="font-medium">{election.title}</TableCell>
@@ -99,9 +100,7 @@ export default function Dashboard({ elections = [], student }) {
                       <TableCell className="text-right">
                         {status === "Active" ? (
                           <Button size="sm" asChild>
-                            <Link href={`/student/elections/${election.id}`}>
-                              Vote Now
-                            </Link>
+                            <Link href={`/student/elections/${election.id}`}>Vote Now</Link>
                           </Button>
                         ) : (
                           <Button size="sm" variant="outline" disabled={status === "Passed"}>
@@ -127,5 +126,8 @@ export default function Dashboard({ elections = [], student }) {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
+
+Dashboard.layout = (page) => <StudentLayout children={page} />
+
