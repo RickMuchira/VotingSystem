@@ -34,6 +34,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/elections/{id}', [ElectionController::class, 'update'])->name('admin.elections.update');
     Route::delete('/elections/{id}', [ElectionController::class, 'destroy'])->name('admin.elections.destroy');
 
+    // Rest of admin routes...
     // Position management routes
     Route::get('/positions', [PositionController::class, 'index'])->name('admin.positions.index');
     Route::get('/positions/create', [PositionController::class, 'create'])->name('admin.positions.create');
@@ -67,21 +68,34 @@ Route::get('/student/login', function () {
 // Student Login Endpoint
 Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login.post');
 
-// Student Logout Endpoint (Added this)
+// Student Logout Endpoint
 Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
 
 // Student Dashboard
 Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
 
-// Student Election View and Voting Routes
-Route::get('/student/election/{id}', [StudentDashboardController::class, 'showElection'])->name('student.election.show');
-Route::post('/student/election/{id}/vote', [StudentDashboardController::class, 'submitVote'])->name('student.election.vote');
+// FIXED: Use consistent routes - we'll stick with the plural "elections" format
+// Make sure you're using the correct methods in StudentDashboardController
+Route::get('/student/elections/{id}', [StudentDashboardController::class, 'showElection'])->name('student.elections.show');
+Route::post('/student/elections/{id}/vote', [StudentDashboardController::class, 'submitVote'])->name('student.elections.vote');
 
-// Student Voting Routes (original routes from your file)
-Route::get('/student/elections/{electionId}', [VotingController::class, 'show'])->name('student.vote.show');
-Route::post('/student/elections/{electionId}/vote', [VotingController::class, 'vote'])->name('student.vote.cast');
+// Comment out the redundant routes to avoid conflicts
+// Route::get('/student/election/{id}', [StudentDashboardController::class, 'showElection'])->name('student.election.show');
+// Route::post('/student/election/{id}/vote', [StudentDashboardController::class, 'submitVote'])->name('student.election.vote');
 
-// Fallback route for debugging
+// Comment out any other duplicate routes
+// Route::get('/student/elections/{electionId}', [VotingController::class, 'show'])->name('student.vote.show');
+// Route::post('/student/elections/{electionId}/vote', [VotingController::class, 'vote'])->name('student.vote.cast');
+
+// Fallback route for debugging - provides more detailed information
 Route::fallback(function () {
-    return response()->json(['message' => 'Route not found. Check URL and method.'], 404);
+    $currentUrl = url()->current();
+    $requestMethod = request()->method();
+    
+    return response()->json([
+        'message' => 'Route not found. Check URL and method.',
+        'url' => $currentUrl,
+        'method' => $requestMethod,
+        'available_routes' => 'Please check web.php for available routes.'
+    ], 404);
 });
