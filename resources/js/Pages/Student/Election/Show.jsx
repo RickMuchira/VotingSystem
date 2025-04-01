@@ -81,32 +81,32 @@ export default function ShowElection({ election, student, hasVoted }) {
     console.log("Election ID:", election.id)
     console.log("Endpoint:", `/student/elections/${election.id}/vote`)
 
-    router.post(
-      `/student/elections/${election.id}/vote`,
-      { votes },
-      {
-        onSuccess: (page) => {
-          console.log("Vote submission successful:", page)
-          setSuccess(true)
-          setSubmitting(false)
-        },
-        onError: (errors) => {
-          console.error("Vote submission error:", errors)
-
-          // Check if it's an authentication error
-          if (errors.message === "Authentication required to vote") {
-            setError("You need to be logged in to vote. Please login and try again.")
-            setTimeout(() => {
-              redirectToLogin()
-            }, 2000)
-          } else {
-            setError(errors.message || "An error occurred while submitting your vote.")
-          }
-
-          setSubmitting(false)
-        },
-      },
-    )
+    // Use axios directly to bypass Inertia's response handling
+    // This will handle the JSON response properly
+    axios.post(`/student/elections/${election.id}/vote`, { votes })
+      .then(response => {
+        console.log("Vote submission successful:", response.data)
+        setSuccess(true)
+        setSubmitting(false)
+      })
+      .catch(error => {
+        console.error("Vote submission error:", error)
+        
+        // Get the error message from axios response
+        const errorMessage = error.response?.data?.message || error.message
+        
+        // Check if it's an authentication error
+        if (errorMessage === "Authentication required to vote") {
+          setError("You need to be logged in to vote. Please login and try again.")
+          setTimeout(() => {
+            redirectToLogin()
+          }, 2000)
+        } else {
+          setError(errorMessage || "An error occurred while submitting your vote.")
+        }
+        
+        setSubmitting(false)
+      })
   }
 
   // Calculate progress percentage
@@ -281,8 +281,7 @@ export default function ShowElection({ election, student, hasVoted }) {
               <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No Positions Available</h3>
               <p className="text-muted-foreground">
-                There are no positions with candidates defined for this election yet. Please check back later.didates
-                defined for this election yet. Please check back later.
+                There are no positions with candidates defined for this election yet. Please check back later.
               </p>
             </CardContent>
           </Card>
@@ -319,4 +318,3 @@ export default function ShowElection({ election, student, hasVoted }) {
 }
 
 ShowElection.layout = (page) => <StudentLayout children={page} />
-

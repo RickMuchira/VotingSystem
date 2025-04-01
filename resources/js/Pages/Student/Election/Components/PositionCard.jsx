@@ -1,31 +1,40 @@
-"use client";
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { User } from "lucide-react";
+"use client"
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Check, User, ImageIcon } from "lucide-react"
 
 export default function PositionCard({ position, selectedCandidate, onVote }) {
-  // Helper function to get the proper image URL
-  const getCandidateImageUrl = (photoPath) => {
-    if (!photoPath) {
-      return null;
+  const [imageError, setImageError] = useState({})
+
+  // Handler for image load errors
+  const handleImageError = (candidateId) => {
+    setImageError((prev) => ({
+      ...prev,
+      [candidateId]: true,
+    }))
+  }
+
+  // Get image URL with proper fallbacks
+  const getImageUrl = (candidate) => {
+    // First check if we already know this image has an error
+    if (imageError[candidate.id]) {
+      return null; // Will trigger the fallback UI
     }
     
-    // If it's already a full URL, return it as is
-    if (photoPath.startsWith('http')) {
-      return photoPath;
+    // Then try the image_url field (preferred)
+    if (candidate.image_url) {
+      return candidate.image_url;
     }
     
-    // If it's a path like "candidates/filename.jpg", make it use /storage prefix
-    if (photoPath.startsWith('candidates/')) {
-      return `/storage/${photoPath}`;
+    // Fall back to photo field if image_url isn't available
+    if (candidate.photo) {
+      return candidate.photo;
     }
     
-    // Fallback - just use the path as is with storage prefix
-    return `/storage/${photoPath}`;
-  };
+    // If neither field has a value, return null to trigger fallback UI
+    return null;
+  }
 
   return (
     <Card>
@@ -33,71 +42,71 @@ export default function PositionCard({ position, selectedCandidate, onVote }) {
         <CardTitle>{position.name}</CardTitle>
       </CardHeader>
       <CardContent>
-        <RadioGroup
-          value={selectedCandidate ? String(selectedCandidate) : ""}
-          onValueChange={(value) => onVote(value)}
-          className="space-y-4"
-        >
-          {position.candidates && position.candidates.length > 0 ? (
-            position.candidates.map((candidate) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {position.candidates.map((candidate) => {
+            const imageUrl = getImageUrl(candidate);
+            
+            return (
               <div
                 key={candidate.id}
-                className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
-                  selectedCandidate === candidate.id.toString()
-                    ? "bg-blue-50"
-                    : "hover:bg-gray-50"
+                className={`border rounded-lg overflow-hidden ${
+                  selectedCandidate === candidate.id
+                    ? "border-2 border-primary bg-primary-50"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
               >
-                <RadioGroupItem
-                  value={candidate.id.toString()}
-                  id={`candidate-${candidate.id}`}
-                  className="mt-1"
-                />
-                <div className="flex-1 flex">
-                  <div className="mr-4">
-                    {candidate.photo ? (
-                      <img
-                        src={getCandidateImageUrl(candidate.photo)}
-                        alt={candidate.name}
-                        className="w-20 h-20 rounded-full object-cover border border-gray-200"
-                        onError={(e) => {
-                          console.error(`Failed to load image: ${e.target.src}`);
-                          e.target.src = "/placeholder-avatar.png"; // Fallback to default avatar
-                          e.target.onerror = null; // Prevent infinite loop
-                        }}
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User className="h-10 w-10 text-gray-500" />
+                <div className="aspect-[4/3] bg-gray-100 relative">
+                  {selectedCandidate === candidate.id && (
+                    <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full">
+                      <Check className="h-5 w-5" />
+                    </div>
+                  )}
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={`${candidate.name}`}
+                      className="w-full h-full object-cover"
+                      onError={() => handleImageError(candidate.id)}
+                    />
+                  ) : (
+                    // Fallback when image is missing or fails to load
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                      <div className="text-center text-gray-400">
+                        <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm">No photo</p>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={`candidate-${candidate.id}`}
-                      className="font-medium text-lg cursor-pointer"
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-lg">{candidate.name}</h3>
+                  {candidate.motto && <p className="text-sm italic mt-1">"{candidate.motto}"</p>}
+                  {candidate.course && (
+                    <div className="mt-3 text-sm">
+                      <div className="flex items-center text-muted-foreground">
+                        <User className="h-3.5 w-3.5 mr-1" />
+                        <span>
+                          {candidate.course}
+                          {candidate.year && `, Year ${candidate.year}`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-4">
+                    <Button
+                      variant={selectedCandidate === candidate.id ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => onVote(candidate.id)}
                     >
-                      {candidate.name}
-                    </Label>
-                    {candidate.motto && (
-                      <p className="text-sm text-muted-foreground italic">
-                        "{candidate.motto}"
-                      </p>
-                    )}
-                    {candidate.bio && (
-                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                        {candidate.bio}
-                      </p>
-                    )}
+                      {selectedCandidate === candidate.id ? "Selected" : "Vote"}
+                    </Button>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <p className="text-muted-foreground">No candidates available for this position.</p>
-          )}
-        </RadioGroup>
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
-  );
+  )
 }

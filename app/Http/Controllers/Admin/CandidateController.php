@@ -70,14 +70,25 @@ class CandidateController extends Controller
             ])->withInput();
         }
         
+        // Default placeholder image
+        $validated['image_url'] = '/images/placeholder-candidate.jpg';
+        
+        // Ensure the public/images directory exists (for placeholder images)
+        if (!file_exists(public_path('images'))) {
+            mkdir(public_path('images'), 0755, true);
+        }
+        
         // Handle photo upload
         if ($request->hasFile('photo')) {
             // Generate a unique filename
             $file = $request->file('photo');
             $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('candidates', $filename, 'public');
-            $validated['photo'] = 'storage/candidates/' . $filename;
+            $validated['image_url'] = '/storage/candidates/' . $filename;
         }
+        
+        // Copy data from 'photo' field to 'image_url' for backward compatibility if necessary
+        $validated['photo'] = $validated['image_url'];
         
         Candidate::create($validated);
         
@@ -136,18 +147,33 @@ class CandidateController extends Controller
         // Handle file uploads separately
         if ($request->hasFile('photo')) {
             // Delete old photo if exists and it's not a placeholder
-            if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/candidates/', '', $candidate->photo))) {
-                Storage::disk('public')->delete(str_replace('storage/candidates/', '', $candidate->photo));
+            $oldPath = str_replace('/storage/', '', $candidate->image_url ?: $candidate->photo);
+            if ($oldPath && $oldPath !== 'images/placeholder-candidate.jpg' && Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
             }
             
             // Generate a unique filename
             $file = $request->file('photo');
             $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('candidates', $filename, 'public');
-            $validated['photo'] = 'storage/candidates/' . $filename;
+            $validated['image_url'] = '/storage/candidates/' . $filename;
+            $validated['photo'] = $validated['image_url']; // For backward compatibility
         } else {
             // Retain the existing photo if no new one is uploaded
-            $validated['photo'] = $candidate->photo;
+            $validated['image_url'] = $candidate->image_url ?: $candidate->photo;
+            $validated['photo'] = $validated['image_url']; // For backward compatibility
+            
+            // If no image exists, set a default placeholder
+            if (empty($validated['image_url'])) {
+                $validated['image_url'] = '/images/placeholder-candidate.jpg';
+                $validated['photo'] = $validated['image_url'];
+            }
+            
+            // Fix path formatting (ensure leading slash)
+            if (strpos($validated['image_url'], '/') !== 0) {
+                $validated['image_url'] = '/' . $validated['image_url'];
+                $validated['photo'] = $validated['image_url'];
+            }
         }
         
         // Update the candidate
@@ -163,9 +189,10 @@ class CandidateController extends Controller
     {
         $candidate = Candidate::findOrFail($id);
         
-        // Delete the photo if exists
-        if ($candidate->photo && Storage::disk('public')->exists(str_replace('storage/candidates/', '', $candidate->photo))) {
-            Storage::disk('public')->delete(str_replace('storage/candidates/', '', $candidate->photo));
+        // Delete the photo if exists and it's not a placeholder
+        $photoPath = str_replace('/storage/', '', $candidate->image_url ?: $candidate->photo);
+        if ($photoPath && $photoPath !== 'images/placeholder-candidate.jpg' && Storage::disk('public')->exists($photoPath)) {
+            Storage::disk('public')->delete($photoPath);
         }
         
         $candidate->delete();
